@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIMONACH - مركز المهام والأرباح</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Language Selector -->
+        <div class="language-selector">
+            <select id="languageSelect" onchange="changeLanguage()">
+                <option value="ar">🇸🇦 العربية</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="hi">🇮🇳 हिंदी</option>
+            </select>
+        </div>
+
+        <!-- Header -->
+        <div class="header">
+            <h1 class="title gradient-text" data-translate="home.title">LIMONACH</h1>
+            <p class="subtitle" data-translate="home.subtitle">مركز المهام والأرباح</p>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="card balance-card">
+            <p class="label" data-translate="home.currentPoints">نقاطك الحالية</p>
+            <div class="balance">
+                <span id="balanceAmount" class="balance-amount gradient-text">0</span>
+                <span class="balance-label" data-translate="home.points">نقطة</span>
+            </div>
+            <div id="earnMessage" class="earn-message" style="display: none;">
+                <span>📈</span>
+                <span data-translate="home.keepEarning">استمر في جمع النقاط!</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-grid">
+            <a href="tasks.html" class="action-card">
+                <div class="action-icon">✅</div>
+                <h3 data-translate="home.tasks">تنفيذ المهام</h3>
+                <p data-translate="home.tasksDesc">ابدأ الربح الآن</p>
+            </a>
+
+            <a href="referrals.html" class="action-card">
+                <div class="action-icon secondary">👥</div>
+                <h3 data-translate="home.referrals">الإحالات</h3>
+                <p data-translate="home.referralsDesc">ادعُ أصدقاءك</p>
+            </a>
+
+            <a href="withdraw.html" class="action-card">
+                <div class="action-icon accent">💰</div>
+                <h3 data-translate="home.withdraw">سحب الأرباح</h3>
+                <p data-translate="home.withdrawDesc">احصل على أموالك</p>
+            </a>
+
+            <a href="advertise.html" class="action-card">
+                <div class="action-icon">📢</div>
+                <h3 data-translate="home.advertise">أضف إعلانك</h3>
+                <p data-translate="home.advertiseDesc">روّج لقناتك</p>
+            </a>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card stats-card">
+            <div class="stats-grid">
+                <div class="stat">
+                    <p id="completedTasks" class="stat-value primary">0</p>
+                    <p class="stat-label" data-translate="home.completedTasks">مهام مكتملة</p>
+                </div>
+                <div class="stat">
+                    <p id="activeReferrals" class="stat-value secondary">0</p>
+                    <p class="stat-label" data-translate="home.activeReferrals">إحالات نشطة</p>
+                </div>
+                <div class="stat">
+                    <p id="totalPoints" class="stat-value accent">0</p>
+                    <p class="stat-label" data-translate="home.totalPoints">مجموع النقاط</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="translations.js"></script>
+    <script src="script.js"></script>
+    <script>
+        function initHome() {
+            const points = localStorage.getItem('limonach_points') || '0';
+            const balance = parseInt(points);
+            document.getElementById('balanceAmount').textContent = balance;
+            
+            if (balance > 0) {
+                document.getElementById('earnMessage').style.display = 'flex';
+            }
+
+            document.getElementById('completedTasks').textContent = localStorage.getItem('completed_tasks') || '0';
+            document.getElementById('activeReferrals').textContent = localStorage.getItem('active_referrals') || '0';
+            document.getElementById('totalPoints').textContent = localStorage.getItem('total_earned_points') || '0';
+        }
+
+        document.addEventListener('DOMContentLoaded', initHome);
+    </script>
+</body>
+</html>
