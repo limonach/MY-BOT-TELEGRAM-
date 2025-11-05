@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>orange 🍊</title>
+
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    <!-- ==========================
+         GLOBAL STYLES
+    =========================== -->
+    <style>
+        :root {
+            --font-family: 'Poppins', sans-serif;
+            --primary-color: #E74C3C;
+            --secondary-color: #F39C12;
+
+            /* Light Theme */
+            --background-light: #FDFEFE;
+            --surface-light: #FFFFFF;
+            --text-primary-light: #2C3E50;
+            --text-secondary-light: #808B96;
+            --border-light: #EAEDED;
+
+            /* Dark Theme */
+            --background-dark: #1B2631;
+            --surface-dark: #283747;
+            --text-primary-dark: #FDFEFE;
+            --text-secondary-dark: #ABB2B9;
+            --border-dark: #566573;
+
+            /* Status Colors */
+            --success: #27AE60;
+            --danger: #C0392B;
+            --pending: #F39C12;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            transition: background-color 0.3s, color 0.3s;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body.light-theme {
+            background-color: var(--background-light);
+            color: var(--text-primary-light);
+        }
+
+        body.dark-theme {
+            background-color: var(--background-dark);
+            color: var(--text-primary-dark);
+        }
+
+        #app {
+            max-width: 500px;
+            margin: 0 auto;
+            padding-bottom: 80px;
+        }
+
+        .page {
+            display: none;
+            padding: 15px;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==========================
+           PROFILE HEADER
+        =========================== */
+        .profile-header {
+            padding: 25px 15px;
+            border-bottom: 1px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .light-theme .profile-header {
+            background-color: var(--surface-light);
+            border-bottom-color: var(--border-light);
+        }
+
+        .dark-theme .profile-header {
+            background-color: var(--surface-dark);
+            border-bottom-color: var(--border-dark);
+        }
+
+        #user-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid var(--primary-color);
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        #user-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        #user-balance-container {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        #user-balance {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        /* ==========================
+           STATS GRID
+        =========================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid;
+        }
+
+        .light-theme .stat-card {
+            background-color: var(--surface-light);
+            border-color: var(--border-light);
+        }
+
+        .dark-theme .stat-card {
+            background-color: var(--surface-dark);
+            border-color: var(--border-dark);
+        }
+
+        .stat-card h3 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .light-theme .stat-card h3 { color: var(--text-secondary-light); }
+        .dark-theme .stat-card h3 { color: var(--text-secondary-dark); }
+
+        .stat-card p {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* ==========================
+           LOADER
+        =========================== */
+        #app-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .light-theme #app-loader { background-color: var(--background-light); }
+        .dark-theme #app-loader { background-color: var(--background-dark); }
+
+        #app-loader .spinner {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 5px solid;
+            border-color: var(--primary-color) transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        #loading-progress {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .light-theme #loading-progress { color: var(--text-primary-light); }
+        .dark-theme #loading-progress { color: var(--text-primary-dark); }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+
+<body>
+    <!-- ==========================
+         LOADER
+    =========================== -->
+    <div id="app-loader">
+        <div class="spinner"></div>
+        <p id="loading-progress">0%</p>
+    </div>
+
+    <!-- ==========================
+         POPUP
+    =========================== -->
+    <div id="popup" class="popup-overlay">
+        <div class="popup-content">
+            <div id="popup-body"></div>
+        </div>
+    </div>
+
+    <!-- ==========================
+         APP CONTENT
+    =========================== -->
+    <div id="app" style="display: none;">
+        <header class="profile-header">
+            <img id="user-photo" src="https://via.placeholder.com/80" alt="User">
+            <h1 id="user-name">Loading...</h1>
+            <div id="user-balance-container">
+                Main Balance: <span id="user-balance">0.00</span> TK
+            </div>
+        </header>
+    </div>
+
+    <!-- ==========================
+         FIREBASE & TELEGRAM
+    =========================== -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- ==========================
+         MAIN SCRIPT
+    =========================== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tg = window.Telegram.WebApp;
+
+            // Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyB_MgyvPuOwCUuYGlALv_nqVdLVg-6kEKs",
+                authDomain: "limo-1.firebaseapp.com",
+                databaseURL: "https://limo-1-default-rtdb.firebaseio.com",
+                projectId: "limo-1",
+                storageBucket: "limo-1.firebasestorage.app",
+                messagingSenderId: "539786559035",
+                appId: "1:539786559035:web:14e2ee0bc76ea25129661e"
+            };
+
+            let appConfig = {};
+            let userState = {};
+            let tgUser = {};
+            let earningWalletBalance = 0;
+            let leaderboardData = { referral: [], earning: [] };
+            let userTransactions = [];
+
+            const popup = document.getElementById('popup');
+            const popupBody = document.getElementById('popup-body');
+            const loadingProgress = document.getElementById('loading-progress');
+
+            // Utility functions
+            const showPopup = (content) => {
+                popupBody.innerHTML = content;
+                popup.style.display = 'flex';
+            };
+
+            const closePopup = () => { popup.style.display = 'none'; };
+            const updateProgress = (percentage) => { loadingProgress.textContent = `${percentage}%`; };
+
+            // Load ad SDK dynamically
+            const loadAdSdk = (zoneId) => {
+                if (!zoneId) {
+                    console.error("Ad Zone ID is missing from Firebase config!");
+                    return;
+                }
+                if (document.querySelector(`script[data-zone='${zoneId}']`)) return;
+                const script = document.createElement('script');
+                script.src = `//libtl.com/sdk.js`;
+                script.setAttribute('data-zone', zoneId);
+                script.setAttribute('data-sdk', `show_${zoneId}`);
+                script.async = true;
+                document.body.appendChild(script);
+            };
+
+            // Initialize App
+            const initApp = async () => {
+                tg.ready();
+                tg.expand();
+                document.body.className = `${tg.colorScheme}-theme`;
+                tgUser = tg.initDataUnsafe.user;
+
+                if (!tgUser || !tgUser.id) {
+                    tg.showAlert("User data not found.", () => tg.close());
+                    return;
+                }
+
+                try {
+                    updateProgress(10);
+                    firebase.initializeApp(firebaseConfig);
+                    const db = firebase.database();
+
+                    updateProgress(20);
+                    const configSnapshot = await db.ref('config').once('value');
+                    appConfig = configSnapshot.val() || {};
+
+                    updateProgress(40);
+                    await loadUserData(db);
+
+                    updateProgress(60);
+                    const referralBoardPromise = db.ref('users').orderByChild('referrals').limitToLast(10).once('value');
+                    const earningBoardPromise = db.ref('users').orderByChild('totalEarned').limitToLast(10).once('value');
+                    const historyPromise = loadTransactionHistory(db);
+
+                    const [referralBoardSnap, earningBoardSnap] = await Promise.all([referralBoardPromise, earningBoardPromise, historyPromise]);
+
+                    updateProgress(80);
+                    referralBoardSnap.forEach(child => { leaderboardData.referral.push(child.val()); });
+                    earningBoardSnap.forEach(child => { leaderboardData.earning.push(child.val()); });
+                    leaderboardData.referral.reverse();
+                    leaderboardData.earning.reverse();
+
+                    updateProgress(90);
+                    loadAdSdk(appConfig.adZoneId);
+                    earningWalletBalance = parseFloat(localStorage.getItem(`earningWallet_${tgUser.id}`) || '0');
+
+                    renderUI();
+                    setupNavigation();
+                    setupEventListeners();
+
+                    updateProgress(100);
+                    setTimeout(() => {
+                        document.getElementById('app-loader').style.display = 'none';
+                        document.getElementById('app').style.display = 'block';
+                    }, 300);
+
+                } catch (error) {
+                    console.error("Initialization failed:", error);
+                    tg.showAlert("Failed to load app data. Please try again.");
+                }
+            };
+
+            // Load User Data
+            const loadUserData = async (db) => {
+                const userRef = db.ref(`users/${tgUser.id}`);
+                const snapshot = await userRef.once('value');
+                let userData = snapshot.val();
+
+                if (!userData) {
+                    // This block runs ONLY for a new user
+                    console.log("New user detected");
+                }
+            };
+
+            // Start initialization
+            initApp();
+        });
+    </script>
+</body>
+</html>
