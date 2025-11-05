@@ -112,6 +112,21 @@
         .rank { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); width: 40px; }
         .leaderboard-item img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
         .leaderboard-name { font-weight: 600; flex-grow: 1; } .leaderboard-score { font-weight: 600; color: var(--primary-color); }
+
+        .referral-card { padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; }
+        .light-theme .referral-card { background-color: var(--surface-light); border: 1px solid var(--border-light); }
+        .dark-theme .referral-card { background-color: var(--surface-dark); border: 1px solid var(--border-dark); }
+        .referral-code { background: rgba(231, 76, 60, 0.1); padding: 15px; border-radius: 8px; margin: 15px 0; font-family: monospace; font-size: 1.2rem; font-weight: 600; color: var(--primary-color); }
+        .copy-btn { background: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        
+        .withdraw-form { padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .light-theme .withdraw-form { background-color: var(--surface-light); border: 1px solid var(--border-light); }
+        .dark-theme .withdraw-form { background-color: var(--surface-dark); border: 1px solid var(--border-dark); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 8px; font-family: var(--font-family); }
+        .light-theme .form-group input, .light-theme .form-group select { background-color: var(--background-light); border: 1px solid var(--border-light); }
+        .dark-theme .form-group input, .dark-theme .form-group select { background-color: var(--background-dark); border: 1px solid var(--border-dark); }
     </style>
 </head>
 <body>
@@ -158,7 +173,8 @@
                 <div id="earning-board" style="display: none;"><ul class="leaderboard-list" id="earning-leaderboard-list"></ul></div>
             </div>
             <div id="profile-page" class="page">
-                <div id="referral-section"></div><div id="withdraw-section"></div>
+                <div id="referral-section"></div>
+                <div id="withdraw-section"></div>
                 <div id="withdrawal-history-section" style="margin-top: 20px;">
                     <h2>Withdrawal History</h2><div id="withdrawal-history-list"></div>
                 </div>
@@ -180,30 +196,47 @@
     document.addEventListener('DOMContentLoaded', () => {
         const tg = window.Telegram.WebApp;
         const firebaseConfig = {
- apiKey: "AIzaSyB_MgyvPuOwCUuYGlALv_nqVdLVg-6kEKs",
-  authDomain: "limo-1.firebaseapp.com",
-  databaseURL: "https://limo-1-default-rtdb.firebaseio.com",
-  projectId: "limo-1",
-  storageBucket: "limo-1.firebasestorage.app",
-  messagingSenderId: "539786559035",
-  appId: "1:539786559035:web:14e2ee0bc76ea25129661e"
+            apiKey: "AIzaSyB_MgyvPuOwCUuYGlALv_nqVdLVg-6kEKs",
+            authDomain: "limo-1.firebaseapp.com",
+            databaseURL: "https://limo-1-default-rtdb.firebaseio.com",
+            projectId: "limo-1",
+            storageBucket: "limo-1.firebasestorage.app",
+            messagingSenderId: "539786559035",
+            appId: "1:539786559035:web:14e2ee0bc76ea25129661e"
         };
         
-        let appConfig = {}; let userState = {}; let tgUser = {}; let earningWalletBalance = 0;
+        let appConfig = {}; 
+        let userState = {}; 
+        let tgUser = {}; 
+        let earningWalletBalance = 0;
         let leaderboardData = { referral: [], earning: [] };
         let userTransactions = [];
+        let db;
 
         const popup = document.getElementById('popup');
         const popupBody = document.getElementById('popup-body');
         const loadingProgress = document.getElementById('loading-progress');
 
-        const showPopup = (content) => { popupBody.innerHTML = content; popup.style.display = 'flex'; };
-        const closePopup = () => { popup.style.display = 'none'; };
-        const updateProgress = (percentage) => { loadingProgress.textContent = `${percentage}%`; };
+        const showPopup = (content) => { 
+            popupBody.innerHTML = content; 
+            popup.style.display = 'flex'; 
+        };
+        
+        const closePopup = () => { 
+            popup.style.display = 'none'; 
+        };
+        
+        const updateProgress = (percentage) => { 
+            loadingProgress.textContent = `${percentage}%`; 
+        };
 
         const loadAdSdk = (zoneId) => {
-            if (!zoneId) { console.error("Ad Zone ID is missing from Firebase config!"); return; }
+            if (!zoneId) { 
+                console.error("Ad Zone ID is missing from Firebase config!"); 
+                return; 
+            }
             if (document.querySelector(`script[data-zone='${zoneId}']`)) return;
+            
             const script = document.createElement('script');
             script.src = `//libtl.com/sdk.js`;
             script.setAttribute('data-zone', zoneId);
@@ -212,21 +245,457 @@
             document.body.appendChild(script);
         };
 
-        const initApp = async () => {
-            tg.ready(); tg.expand();
-            document.body.className = `${tg.colorScheme}-theme`;
-            tgUser = tg.initDataUnsafe.user;
-            if (!tgUser || !tgUser.id) { tg.showAlert("User data not found.", () => tg.close()); return; }
+        const loadUserData = async (db) => {
+            const userRef = db.ref(`users/${tgUser.id}`);
+            const snapshot = await userRef.once('value');
+            let userData = snapshot.val();
+            
+            if (!userData) {
+                userData = {
+                    id: tgUser.id,
+                    username: tgUser.username || `user_${tgUser.id}`,
+                    firstName: tgUser.first_name || '',
+                    lastName: tgUser.last_name || '',
+                    balance: 0,
+                    earningWallet: 0,
+                    referrals: 0,
+                    totalAdsWatched: 0,
+                    totalEarned: 0,
+                    todayAdsWatched: 0,
+                    welcomed: false,
+                    joinedAt: new Date().toISOString(),
+                    referralCode: generateReferralCode(),
+                    lastAdWatch: null
+                };
+                await userRef.set(userData);
+            }
+            
+            userState = userData;
+            return userData;
+        };
+
+        const generateReferralCode = () => {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        };
+
+        const loadTransactionHistory = async (db) => {
+            const transactionsRef = db.ref(`transactions/${tgUser.id}`);
+            const snapshot = await transactionsRef.orderByChild('timestamp').limitToLast(20).once('value');
+            userTransactions = [];
+            snapshot.forEach(child => {
+                userTransactions.unshift(child.val());
+            });
+            return userTransactions;
+        };
+
+        const renderUI = () => {
+            document.getElementById('user-name').textContent = userState.firstName || userState.username || 'User';
+            document.getElementById('user-balance').textContent = userState.balance?.toFixed(2) || '0.00';
+            document.getElementById('earning-wallet-balance').textContent = earningWalletBalance.toFixed(2);
+            document.getElementById('daily-ads-watched').textContent = `${userState.todayAdsWatched || 0} / ${appConfig.dailyAdLimit || 10}`;
+            document.getElementById('referral-count').textContent = userState.referrals || 0;
+            document.getElementById('total-ads-watched').textContent = userState.totalAdsWatched || 0;
+            document.getElementById('total-earned').textContent = userState.totalEarned?.toFixed(2) || '0.00';
+
+            updateMoveToBalanceButton();
+            renderEarningsChart();
+            renderReferralSection();
+            renderWithdrawSection();
+            renderWithdrawalHistory();
+            renderAdProgress();
+            renderAdTasks();
+            renderDynamicTasks();
+            renderLeaderboards();
+        };
+
+        const updateMoveToBalanceButton = () => {
+            const moveBtn = document.getElementById('move-to-balance-btn');
+            if (earningWalletBalance >= 100) {
+                moveBtn.disabled = false;
+                moveBtn.textContent = `Move ${earningWalletBalance.toFixed(2)} TK to Balance`;
+            } else {
+                moveBtn.disabled = true;
+                moveBtn.textContent = `Move to Main Balance`;
+            }
+        };
+
+        const renderEarningsChart = () => {
+            const chart = document.getElementById('earnings-chart');
+            const labels = document.getElementById('earnings-chart-labels');
+            chart.innerHTML = '';
+            labels.innerHTML = '';
+
+            const earnings = Array.from({length: 7}, () => Math.random() * 50 + 10);
+            const maxEarning = Math.max(...earnings);
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+            earnings.forEach((earning, index) => {
+                const barHeight = (earning / maxEarning) * 100;
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = `${barHeight}%`;
+                bar.innerHTML = `<div class="tooltip">${earning.toFixed(2)} TK</div>`;
+                chart.appendChild(bar);
+
+                const label = document.createElement('div');
+                label.textContent = days[index];
+                labels.appendChild(label);
+            });
+        };
+
+        const renderReferralSection = () => {
+            const referralSection = document.getElementById('referral-section');
+            referralSection.innerHTML = `
+                <div class="referral-card">
+                    <h3>Refer Friends & Earn</h3>
+                    <p>Share your referral code and earn ${appConfig.referralBonus || 10} TK for each friend who joins!</p>
+                    <div class="referral-code">${userState.referralCode}</div>
+                    <button class="copy-btn" onclick="copyReferralCode()">
+                        <i class="fas fa-copy"></i> Copy Referral Code
+                    </button>
+                    <p style="margin-top: 10px; font-size: 0.9rem; color: var(--text-secondary-light);">
+                        Referred: ${userState.referrals || 0} friends
+                    </p>
+                </div>
+            `;
+        };
+
+        const renderWithdrawSection = () => {
+            const withdrawSection = document.getElementById('withdraw-section');
+            withdrawSection.innerHTML = `
+                <div class="withdraw-form">
+                    <h3>Withdraw Funds</h3>
+                    <div class="form-group">
+                        <label for="withdraw-method">Payment Method</label>
+                        <select id="withdraw-method">
+                            <option value="bkash">bKash</option>
+                            <option value="nagad">Nagad</option>
+                            <option value="rocket">Rocket</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="account-number">Account Number</label>
+                        <input type="text" id="account-number" placeholder="Enter your account number">
+                    </div>
+                    <div class="form-group">
+                        <label for="withdraw-amount">Amount (TK)</label>
+                        <input type="number" id="withdraw-amount" placeholder="Minimum ${appConfig.minWithdraw || 100} TK" min="${appConfig.minWithdraw || 100}">
+                    </div>
+                    <button class="action-btn" style="width:100%;" onclick="submitWithdrawal()">Submit Withdrawal</button>
+                </div>
+            `;
+        };
+
+        const renderWithdrawalHistory = () => {
+            const historyList = document.getElementById('withdrawal-history-list');
+            if (userTransactions.length === 0) {
+                historyList.innerHTML = '<p style="text-align: center; color: var(--text-secondary-light);">No withdrawal history</p>';
+                return;
+            }
+
+            historyList.innerHTML = userTransactions.map(transaction => `
+                <div class="history-item">
+                    <div class="history-details">
+                        <p>${transaction.method} - ${transaction.accountNumber}</p>
+                        <small>${new Date(transaction.timestamp).toLocaleDateString()}</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="font-weight: 600;">${transaction.amount} TK</p>
+                        <div class="history-status status-${transaction.status}">${transaction.status}</div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        const renderAdProgress = () => {
+            const progressContainer = document.getElementById('ad-progress-container');
+            const todayWatched = userState.todayAdsWatched || 0;
+            const dailyLimit = appConfig.dailyAdLimit || 10;
+            const progressPercent = (todayWatched / dailyLimit) * 100;
+
+            progressContainer.innerHTML = `
+                <div class="progress-info">
+                    <span>Daily Ad Progress</span>
+                    <span>${todayWatched}/${dailyLimit}</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fg" style="width: ${progressPercent}%"></div>
+                </div>
+            `;
+        };
+
+        const renderAdTasks = () => {
+            const adTaskContainer = document.getElementById('ad-task-container');
+            adTaskContainer.innerHTML = `
+                <h2>Watch Ads & Earn</h2>
+                <div class="task-container">
+                    <div class="task-icon">
+                        <i class="fas fa-ad" style="font-size: 2rem; color: var(--primary-color);"></i>
+                    </div>
+                    <div class="task-info">
+                        <h3>Watch Video Ad</h3>
+                        <p>Earn ${appConfig.adReward || 2} TK per ad</p>
+                    </div>
+                    <button class="action-btn" onclick="watchAd()" ${(userState.todayAdsWatched || 0) >= (appConfig.dailyAdLimit || 10) ? 'disabled' : ''}>
+                        Watch Ad
+                    </button>
+                </div>
+            `;
+        };
+
+        const renderDynamicTasks = () => {
+            const tasksContainer = document.getElementById('dynamic-tasks-container');
+            const tasks = appConfig.bonusTasks || [
+                { id: 1, name: "Join Telegram Channel", reward: 5, type: "telegram" },
+                { id: 2, name: "Follow on Social Media", reward: 10, type: "social" },
+                { id: 3, name: "Daily Login Bonus", reward: 3, type: "login" }
+            ];
+
+            tasksContainer.innerHTML = tasks.map(task => `
+                <div class="task-container">
+                    <div class="task-icon">
+                        <i class="fas fa-${getTaskIcon(task.type)}" style="font-size: 2rem; color: var(--primary-color);"></i>
+                    </div>
+                    <div class="task-info">
+                        <h3>${task.name}</h3>
+                        <p>Earn ${task.reward} TK</p>
+                    </div>
+                    <button class="action-btn" onclick="completeTask(${task.id})">
+                        Claim
+                    </button>
+                </div>
+            `).join('');
+        };
+
+        const getTaskIcon = (taskType) => {
+            const icons = {
+                telegram: 'paper-plane',
+                social: 'share-alt',
+                login: 'calendar-check',
+                default: 'tasks'
+            };
+            return icons[taskType] || icons.default;
+        };
+
+        const renderLeaderboards = () => {
+            renderLeaderboard('referral');
+            renderLeaderboard('earning');
+        };
+
+        const renderLeaderboard = (type) => {
+            const listId = `${type}-leaderboard-list`;
+            const list = document.getElementById(listId);
+            const data = leaderboardData[type];
+            const field = type === 'referral' ? 'referrals' : 'totalEarned';
+
+            list.innerHTML = data.map((user, index) => `
+                <li class="leaderboard-item">
+                    <div class="rank">#${index + 1}</div>
+                    <img src="https://via.placeholder.com/40" alt="${user.firstName}">
+                    <div class="leaderboard-name">${user.firstName || user.username}</div>
+                    <div class="leaderboard-score">${user[field] || 0} ${type === 'referral' ? 'Refs' : 'TK'}</div>
+                </li>
+            `).join('');
+        };
+
+        const setupNavigation = () => {
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetPage = btn.getAttribute('data-page');
+                    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                    document.querySelectorAll('.nav-btn').forEach(navBtn => navBtn.classList.remove('active'));
+                    document.getElementById(targetPage).classList.add('active');
+                    btn.classList.add('active');
+                });
+            });
+
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const boardType = btn.getAttribute('data-board');
+                    document.querySelectorAll('.toggle-btn').forEach(tb => tb.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    document.getElementById('referral-board').style.display = boardType === 'referral' ? 'block' : 'none';
+                    document.getElementById('earning-board').style.display = boardType === 'earning' ? 'block' : 'none';
+                });
+            });
+        };
+
+        const setupEventListeners = () => {
+            document.querySelector('.popup-content').addEventListener('click', (e) => {
+                if (e.target.classList.contains('popup-close-btn')) {
+                    closePopup();
+                }
+            });
+
+            document.getElementById('move-to-balance-btn').addEventListener('click', moveToBalance);
+        };
+
+        const moveToBalance = async () => {
+            if (earningWalletBalance < 100) {
+                showPopup('<h2>Insufficient Funds</h2><p>You need at least 100 TK in your earning wallet.</p><button class="popup-close-btn">OK</button>');
+                return;
+            }
 
             try {
-                updateProgress(10); firebase.initializeApp(firebaseConfig); const db = firebase.database();
+                const userRef = db.ref(`users/${tgUser.id}`);
+                await userRef.update({
+                    balance: (userState.balance || 0) + earningWalletBalance,
+                    totalEarned: (userState.totalEarned || 0) + earningWalletBalance
+                });
+
+                earningWalletBalance = 0;
+                localStorage.setItem(`earningWallet_${tgUser.id}`, '0');
+                
+                userState.balance = (userState.balance || 0) + earningWalletBalance;
+                userState.totalEarned = (userState.totalEarned || 0) + earningWalletBalance;
+
+                showPopup(`<h2>Success!</h2><p>${earningWalletBalance.toFixed(2)} TK moved to your main balance.</p><button class="popup-close-btn">OK</button>`);
+                renderUI();
+            } catch (error) {
+                showPopup('<h2>Error</h2><p>Failed to move funds. Please try again.</p><button class="popup-close-btn">OK</button>');
+            }
+        };
+
+        window.copyReferralCode = () => {
+            navigator.clipboard.writeText(userState.referralCode).then(() => {
+                showPopup('<h2>Copied!</h2><p>Referral code copied to clipboard.</p><button class="popup-close-btn">OK</button>');
+            });
+        };
+
+        window.watchAd = () => {
+            if ((userState.todayAdsWatched || 0) >= (appConfig.dailyAdLimit || 10)) {
+                showPopup('<h2>Daily Limit Reached</h2><p>You have reached your daily ad limit. Come back tomorrow!</p><button class="popup-close-btn">OK</button>');
+                return;
+            }
+
+            showPopup(`
+                <div class="popup-loader">
+                    <div class="spinner"></div>
+                    <h2>Loading Ad</h2>
+                    <p>Please wait while we load the advertisement...</p>
+                </div>
+            `);
+
+            setTimeout(() => {
+                const adReward = appConfig.adReward || 2;
+                earningWalletBalance += adReward;
+                localStorage.setItem(`earningWallet_${tgUser.id}`, earningWalletBalance.toString());
+
+                db.ref(`users/${tgUser.id}`).update({
+                    todayAdsWatched: (userState.todayAdsWatched || 0) + 1,
+                    totalAdsWatched: (userState.totalAdsWatched || 0) + 1,
+                    lastAdWatch: new Date().toISOString()
+                });
+
+                userState.todayAdsWatched = (userState.todayAdsWatched || 0) + 1;
+                userState.totalAdsWatched = (userState.totalAdsWatched || 0) + 1;
+
+                showPopup(`
+                    <h2>Ad Completed!</h2>
+                    <p>You earned ${adReward} TK for watching the ad.</p>
+                    <button class="popup-close-btn">Great!</button>
+                `);
+                
+                renderUI();
+            }, 3000);
+        };
+
+        window.completeTask = (taskId) => {
+            const tasks = appConfig.bonusTasks || [];
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const reward = task.reward || 5;
+            earningWalletBalance += reward;
+            localStorage.setItem(`earningWallet_${tgUser.id}`, earningWalletBalance.toString());
+
+            showPopup(`
+                <h2>Task Completed!</h2>
+                <p>You earned ${reward} TK for ${task.name}.</p>
+                <button class="popup-close-btn">Awesome!</button>
+            `);
+
+            renderUI();
+        };
+
+        window.submitWithdrawal = async () => {
+            const method = document.getElementById('withdraw-method').value;
+            const accountNumber = document.getElementById('account-number').value;
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const minWithdraw = appConfig.minWithdraw || 100;
+
+            if (!accountNumber) {
+                showPopup('<h2>Error</h2><p>Please enter your account number.</p><button class="popup-close-btn">OK</button>');
+                return;
+            }
+
+            if (amount < minWithdraw) {
+                showPopup(`<h2>Error</h2><p>Minimum withdrawal amount is ${minWithdraw} TK.</p><button class="popup-close-btn">OK</button>`);
+                return;
+            }
+
+            if (amount > userState.balance) {
+                showPopup('<h2>Insufficient Balance</h2><p>You do not have enough balance for this withdrawal.</p><button class="popup-close-btn">OK</button>');
+                return;
+            }
+
+            try {
+                const transactionId = Date.now().toString();
+                const transactionData = {
+                    id: transactionId,
+                    userId: tgUser.id,
+                    method: method,
+                    accountNumber: accountNumber,
+                    amount: amount,
+                    status: 'pending',
+                    timestamp: new Date().toISOString()
+                };
+
+                await db.ref(`transactions/${tgUser.id}/${transactionId}`).set(transactionData);
+                await db.ref(`users/${tgUser.id}`).update({
+                    balance: (userState.balance || 0) - amount
+                });
+
+                userState.balance = (userState.balance || 0) - amount;
+                userTransactions.unshift(transactionData);
+
+                showPopup(`
+                    <h2>Withdrawal Submitted!</h2>
+                    <p>Your withdrawal request for ${amount} TK has been submitted. It will be processed within 24 hours.</p>
+                    <button class="popup-close-btn">OK</button>
+                `);
+
+                document.getElementById('account-number').value = '';
+                document.getElementById('withdraw-amount').value = '';
+                renderUI();
+            } catch (error) {
+                showPopup('<h2>Error</h2><p>Failed to submit withdrawal. Please try again.</p><button class="popup-close-btn">OK</button>');
+            }
+        };
+
+        const initApp = async () => {
+            tg.ready(); 
+            tg.expand();
+            document.body.className = `${tg.colorScheme}-theme`;
+            tgUser = tg.initDataUnsafe.user;
+            
+            if (!tgUser || !tgUser.id) { 
+                tg.showAlert("User data not found.", () => tg.close()); 
+                return; 
+            }
+
+            try {
+                updateProgress(10); 
+                firebase.initializeApp(firebaseConfig); 
+                db = firebase.database();
                 updateProgress(20);
                 
                 const configSnapshot = await db.ref('config').once('value');
                 appConfig = configSnapshot.val() || {};
                 updateProgress(40);
 
-                await loadUserData(db); // This now depends on appConfig, so it runs after.
+                await loadUserData(db);
                 updateProgress(60);
 
                 const referralBoardPromise = db.ref('users').orderByChild('referrals').limitToLast(10).once('value');
@@ -236,15 +705,22 @@
                 const [referralBoardSnap, earningBoardSnap] = await Promise.all([referralBoardPromise, earningBoardPromise, historyPromise]);
                 updateProgress(80);
 
-                referralBoardSnap.forEach(child => { leaderboardData.referral.push(child.val()); });
-                earningBoardSnap.forEach(child => { leaderboardData.earning.push(child.val()); });
-                leaderboardData.referral.reverse(); leaderboardData.earning.reverse();
+                referralBoardSnap.forEach(child => { 
+                    leaderboardData.referral.push(child.val()); 
+                });
+                earningBoardSnap.forEach(child => { 
+                    leaderboardData.earning.push(child.val()); 
+                });
+                leaderboardData.referral.reverse(); 
+                leaderboardData.earning.reverse();
                 updateProgress(90);
 
                 loadAdSdk(appConfig.adZoneId);
                 earningWalletBalance = parseFloat(localStorage.getItem(`earningWallet_${tgUser.id}`) || '0');
                 
-                renderUI(); setupNavigation(); setupEventListeners();
+                renderUI(); 
+                setupNavigation(); 
+                setupEventListeners();
                 updateProgress(100);
 
                 setTimeout(() => {
@@ -255,13 +731,14 @@
                         db.ref(`users/${tgUser.id}/welcomed`).set(true);
                     }
                 }, 300);
-            } catch (error) { console.error("Initialization failed:", error); tg.showAlert("Failed to load app data. Please try again."); }
+            } catch (error) { 
+                console.error("Initialization failed:", error); 
+                tg.showAlert("Failed to load app data. Please try again."); 
+            }
         };
 
-        const loadUserData = async (db) => {
-            const userRef = db.ref(`users/${tgUser.id}`);
-            const snapshot = await userRef.once('value');
-            let userData = snapshot.val();
-            
-            if (!userData) {
-                // This block runs ONLY for a new u
+        initApp();
+    });
+    </script>
+</body>
+</html>
