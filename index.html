@@ -536,33 +536,27 @@
 
         window.claimReward = async function() {
             if (typeof window.show_10129358 !== 'function') {
-                return showAlert("Ad service abhi uplabdh nahi hai. Kripya baad mein prayas karein.");
-            }
-            
-            try {
-                const adPromise = window.show_10129358({ 
-                    type: 'inApp', 
-                    inAppSettings: { 
-                        frequency: 2, 
-                        capping: 0.1, 
-                        interval: 30, 
-                        timeout: 5, 
-                        everyPage: false 
-                    } 
-                });
+        window.claimReward = async function() {
+    if (typeof window.show_10129358 !== 'function') {
+        return showAlert("Ad service abhi uplabdh nahi hai. Kripya baad mein prayas karein.");
+    }
+    
+    try {
+        // عرض الإعلان على شكل In-App Interstitial الخاص بـ Monetag
+        const adPromise = window.show_10129358('in-app');
 
-                adPromise.then(async () => {
-                    await updateBalance(100);
-                    showAlert(`Badhai ho! Aapne 100 coins jeete hain.`);
-                }).catch(e => {
-                    console.error("Ad error:", e);
-                    showAlert('Ad nahi dikhaya ja saka. Kripya baad mein prayas karein.');
-                });
-            } catch (error) {
-                console.error("Error showing ad:", error);
-                showAlert('Ad show karne mein error aayi.');
-            }
-        }
+        adPromise.then(async () => {
+            await updateBalance(100);
+            showAlert(`Badhai ho! Aapne 100 coins jeete hain.`);
+        }).catch(e => {
+            console.error("Ad error:", e);
+            showAlert('Ad nahi dikhaya ja saka. Kripya baad mein prayas karein.');
+        });
+    } catch (error) {
+        console.error("Error showing ad:", error);
+        showAlert('Ad show karne mein error aayi.');
+    }
+}
 
         function showAlert(message) {
             document.getElementById('alert-message').textContent = message;
