@@ -453,7 +453,7 @@
                 if (adCompleted) {
                     await handleAdCompletion(taskType);
                 } else {
-                    showAlert("Aapne ad poora nahi dekha. Kripya ad ko 10 seconds tak dekhein reward ke liye.");
+                    showAlert("Aapne ad poora nahi dekha. Kripya ad ko 14 seconds tak dekhein reward ke liye.");
                 }
             }).catch(e => {
                 // الإعلان فشل أو أغلق
@@ -461,7 +461,7 @@
                 console.error("Ad error:", e);
                 
                 if (e && e.message && e.message.includes('closed') || e === 'ad_closed') {
-                    showAlert("Aapne ad band kar diya. Kripya ad ko 10 seconds tak dekhein reward ke liye.");
+                    showAlert("Aapne ad band kar diya. Kripya ad ko 14 seconds tak dekhein reward ke liye.");
                 } else {
                     showAlert('Ad nahi dikhaya ja saka. Kripya baad mein prayas karein.');
                 }
