@@ -554,70 +554,62 @@
         }
 
         window.claimReward = async function(taskType) {
-            const today = new Date().toISOString().split('T')[0];
-            const userRef = doc(db, "users", currentUser.uid);
+    const today = new Date().toISOString().split('T')[0];
+    const userRef = doc(db, "users", currentUser.uid);
 
-            if (userData.lastAdWatchDate !== today) {
-                await updateDoc(userRef, { dailyAdCount: 0, lastAdWatchDate: today });
-                userData.dailyAdCount = 0;
-                userData.lastAdWatchDate = today;
-            }
+    if (userData.lastAdWatchDate !== today) {
+        await updateDoc(userRef, { dailyAdCount: 0, lastAdWatchDate: today });
+        userData.dailyAdCount = 0;
+        userData.lastAdWatchDate = today;
+    }
 
-            if (userData.dailyAdCount >= (appConfig.dailyAdLimit || 10)) {
-                return showAlert("Aapki aaj ki ad dekhne ki seema poori ho gayi hai.");
-            }
-            
-            if (typeof window.show_10129358 !== 'function') {
-                return showAlert("Ad service abhi uplabdh nahi hai. Kripya baad mein prayas karein.");
-            }
-            
-            let adPromise;
-            switch(taskType) {
-                case 'interstitial':
-                    adPromise = window.show_10129358();
-                    break;
-                case 'inApp':
-                    adPromise = window.show_10129358({ type: 'inApp', inAppSettings: { frequency: 2, capping: 0.001, interval: 1, timeout: 5, everyPage: false } });
-                    break;
-                case 'miniApp':
-                    adPromise = window.show_10129358();
-                    break;
-                default:
-                    return;
-        }
-
-            adPromise.then(async () => {
-                const newCount = (userData.dailyAdCount || 0) + 1;
-                await updateDoc(userRef, { dailyAdCount: newCount });
-                userData.dailyAdCount = newCount;
-                
-                let rewardAmount = 0;
-                if (taskType === 'miniApp') {
-                    rewardAmount = 50;
-                } else if (taskType !== 'inApp') {
-                    rewardAmount = 50;
-                }
-
-                if (rewardAmount > 0) {
-                    updateBalance(rewardAmount);
-                    showAlert(`Badhai ho! Aapne ${rewardAmount} coins jeete hain.`);
-                }
-                updateAdsLeftCount();
-            }).catch(e => {
-                console.error("Ad error:", e);
-                showAlert('Ad nahi dikhaya ja saka. Kripya baad mein prayas karein.');
+    if (userData.dailyAdCount >= (appConfig.dailyAdLimit || 10)) {
+        return showAlert("Aapki aaj ki ad dekhne ki seema poori ho gayi hai.");
+    }
+    
+    if (typeof window.show_10129358 !== 'function') {
+        return showAlert("Ad service abhi uplabdh nahi hai. Kripya baad mein prayas karein.");
+    }
+    
+    let adPromise;
+    switch(taskType) {
+        case 'interstitial':
+            adPromise = window.show_10129358();
+            break;
+        case 'inApp':
+            adPromise = window.show_10129358({ 
+                type: 'inApp', 
+                inAppSettings: { 
+                    frequency: 2, 
+                    capping: 0.05,  // 6 دقائق
+                    interval: 180, 
+                    timeout: 5, 
+                    everyPage: false 
+                } 
             });
-        }
+            break;
+        case 'miniApp':
+            adPromise = window.show_10129358();
+            break;
+        default:
+            return;
+    }
 
-        function showAlert(message) {
-            document.getElementById('alert-message').textContent = message;
-            document.getElementById('custom-alert').classList.remove('hidden');
-            document.getElementById('alert-ok-btn').onclick = () => {
-                document.getElementById('custom-alert').classList.add('hidden');
-            };
-        }
-        window.showAlert = showAlert;
+    adPromise.then(async () => {
+        const newCount = (userData.dailyAdCount || 0) + 1;
+        await updateDoc(userRef, { dailyAdCount: newCount });
+        userData.dailyAdCount = newCount;
+        
+        // إعطاء 50 نقطة لجميع أنواع الإعلانات بدون استثناء
+        let rewardAmount = 50;
 
-    </script>
-</body>
-</html>
+        if (rewardAmount > 0) {
+            await updateBalance(rewardAmount);
+            showAlert(`Badhai ho! Aapne ${rewardAmount} coins jeete hain.`);
+        }
+        updateAdsLeftCount();
+    }).catch(e => {
+        console.error("Ad error:", e);
+        showAlert('Ad nahi dikhaya ja saka. Kripya baad mein prayas karein.');
+    });
+}
