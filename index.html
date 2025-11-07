@@ -397,10 +397,10 @@
         function startAdWatchTimer() {
             if (adWatchTimer) clearInterval(adWatchTimer);
             
-            adWatchTimeLeft = 14;
+            adWatchTimeLeft = 5;
             adCompleted = false;
             
-            console.log("Ad watch timer started: 14 seconds");
+            console.log("Ad watch timer started: 5 seconds");
             
             adWatchTimer = setInterval(() => {
                 adWatchTimeLeft--;
@@ -453,7 +453,7 @@
                 if (adCompleted) {
                     await handleAdCompletion(taskType);
                 } else {
-                    showAlert("Aapne ad poora nahi dekha. Kripya ad ko 14 seconds tak dekhein reward ke liye.");
+                    showAlert("Aapne ad poora nahi dekha. Kripya ad ko 5 seconds tak dekhein reward ke liye.");
                 }
             }).catch(e => {
                 // الإعلان فشل أو أغلق
