@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>orange 🍊</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <style>
+        :root {
+            --font-family: 'Poppins', sans-serif;
+            --primary-color: #E74C3C; --secondary-color: #F39C12;
+            --background-light: #FDFEFE; --surface-light: #FFFFFF; --text-primary-light: #2C3E50; --text-secondary-light: #808B96; --border-light: #EAEDED;
+            --background-dark: #1B2631; --surface-dark: #283747; --text-primary-dark: #FDFEFE; --text-secondary-dark: #ABB2B9; --border-dark: #566573;
+            --success: #27AE60; --danger: #C0392B; --pending: #F39C12;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-family); transition: background-color 0.3s, color 0.3s; -webkit-font-smoothing: antialiased; }
+        body.light-theme { background-color: var(--background-light); color: var(--text-primary-light); }
+        body.dark-theme { background-color: var(--background-dark); color: var(--text-primary-dark); }
+        #app { max-width: 500px; margin: 0 auto; padding-bottom: 80px; }
+        .page { display: none; padding: 15px; }
+        .page.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .profile-header {
+            padding: 25px 15px; border-bottom: 1px solid;
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .light-theme .profile-header { background-color: var(--surface-light); border-bottom-color: var(--border-light); }
+        .dark-theme .profile-header { background-color: var(--surface-dark); border-bottom-color: var(--border-dark); }
+        #user-photo { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--primary-color); object-fit: cover; margin-bottom: 10px; }
+        #user-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 5px; }
+        #user-balance-container { font-size: 1rem; font-weight: 500; }
+        #user-balance { font-size: 1.1rem; font-weight: 700; color: var(--primary-color); }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .stat-card { padding: 15px; border-radius: 12px; text-align: center; border: 1px solid; }
+        .light-theme .stat-card { background-color: var(--surface-light); border-color: var(--border-light); }
+        .dark-theme .stat-card { background-color: var(--surface-dark); border-color: var(--border-dark); }
+        .stat-card h3 { font-size: 0.85rem; font-weight: 500; margin-bottom: 8px; text-transform: uppercase; }
+        .light-theme .stat-card h3 { color: var(--text-secondary-light); } .dark-theme .stat-card h3 { color: var(--text-secondary-dark); }
+        .stat-card p { font-size: 1.4rem; font-weight: 600; color: var(--primary-color); }
+        
+        .chart-container, .earning-wallet-card { padding: 20px; border-radius: 12px; margin-top: 20px; border: 1px solid; }
+        .light-theme .chart-container, .light-theme .earning-wallet-card { background-color: var(--surface-light); border-color: var(--border-light); }
+        .dark-theme .chart-container, .dark-theme .earning-wallet-card { background-color: var(--surface-dark); border-color: var(--border-dark); }
+        .chart { display: flex; justify-content: space-around; align-items: flex-end; height: 150px; border-left: 1px solid; border-bottom: 1px solid; padding-top: 10px; }
+        .light-theme .chart { border-color: var(--border-light); } .dark-theme .chart { border-color: var(--border-dark); }
+        .bar { width: 12%; background: linear-gradient(to top, var(--primary-color), var(--secondary-color)); border-radius: 5px 5px 0 0; position: relative; cursor: pointer; }
+        .bar .tooltip { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: var(--secondary); color: white; padding: 3px 7px; border-radius: 5px; font-size: 0.8rem; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        .bar:hover .tooltip { opacity: 1; }
+        .chart-labels { display: flex; justify-content: space-around; font-size: 0.75rem; margin-top: 5px; }
+
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
+        .light-theme .history-item { background-color: var(--surface-light); border: 1px solid var(--border-light); }
+        .dark-theme .history-item { background-color: var(--surface-dark); border: 1px solid var(--border-dark); }
+        .history-details p { margin: 0; } .history-details p:first-child { font-weight: 600; }
+        .history-status { padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; color: white; text-transform: capitalize; }
+        .status-completed { background-color: var(--success); } .status-pending { background-color: var(--pending); } .status-rejected { background-color: var(--danger); }
+
+        .progress-container { margin-bottom: 20px; }
+        .progress-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; font-weight: 500; }
+        .progress-bar-bg { width: 100%; height: 10px; border-radius: 5px; }
+        .light-theme .progress-bar-bg { background-color: var(--border-light); }
+        .dark-theme .progress-bar-bg { background-color: var(--border-dark); }
+        .progress-bar-fg { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); transition: width 0.3s ease; }
+        
+        form input, form select, form textarea { transition: all 0.2s ease-in-out; border: 1px solid; }
+        .light-theme form input, .light-theme form select { border-color: var(--border-light); }
+        .dark-theme form input, .dark-theme form select { border-color: var(--border-dark); }
+        form input:focus, form select:focus, form textarea:focus { outline: none; border-color: var(--primary-color) !important; box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2); }
+
+        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .popup-content { padding: 30px; border-radius: 15px; text-align: center; max-width: 80%; }
+        .light-theme .popup-content { background-color: var(--surface-light); } .dark-theme .popup-content { background-color: var(--surface-dark); }
+        .popup-content h2 { margin-bottom: 15px; color: var(--primary-color); } .popup-content p { margin-bottom: 20px; }
+        .popup-close-btn { padding: 10px 25px; border: none; border-radius: 8px; color: #fff; background-color: var(--primary-color); cursor: pointer; }
+        .popup-loader .spinner { width: 40px; height: 40px; border-radius: 50%; border: 4px solid; border-color: var(--primary-color) transparent; animation: spin 1s linear infinite; margin: 0 auto 15px;}
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        #app-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .light-theme #app-loader { background-color: var(--background-light); } .dark-theme #app-loader { background-color: var(--background-dark); }
+        #app-loader .spinner { width: 50px; height: 50px; border-radius: 50%; border: 5px solid; border-color: var(--primary-color) transparent; animation: spin 1s linear infinite; }
+        #loading-progress { margin-top: 15px; font-size: 1.2rem; font-weight: 600; }
+        .light-theme #loading-progress { color: var(--text-primary-light); } .dark-theme #loading-progress { color: var(--text-primary-dark); }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 500px; margin: 0 auto; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid; z-index: 1000; }
+        .light-theme .bottom-nav { background-color: var(--surface-light); border-top-color: var(--border-light); }
+        .dark-theme .bottom-nav { background-color: var(--surface-dark); border-top-color: var(--border-dark); }
+        .nav-btn { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-family: var(--font-family); font-size: 0.75rem; transition: color 0.2s; flex-grow: 1; }
+        .light-theme .nav-btn { color: var(--text-secondary-light); } .dark-theme .nav-btn { color: var(--text-secondary-dark); }
+        .nav-btn i { font-size: 1.5rem; margin-bottom: 4px; } .nav-btn.active { color: var(--primary-color); }
+        
+        .task-container { padding: 20px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; }
+        .light-theme .task-container { background-color: var(--surface-light); border: 1px solid var(--border-light); }
+        .dark-theme .task-container { background-color: var(--surface-dark); border: 1px solid var(--border-dark); }
+        .task-icon-img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+        .task-info h3 { font-size: 1.1rem; font-weight: 600; } .task-info p { font-size: 0.85rem; }
+        .action-btn { padding: 10px 20px; font-size: 0.9rem; font-weight: 600; color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: linear-gradient(45deg, var(--primary-color), var(--secondary-color)); margin-left: auto; white-space: nowrap; }
+        .action-btn:disabled { background: #808B96; cursor: not-allowed; }
+        
+        .leaderboard-toggle { display: flex; justify-content: space-around; margin-bottom: 15px; }
+        .toggle-btn { padding: 10px 20px; border: none; background: none; font-size: 1rem; cursor: pointer; }
+        .light-theme .toggle-btn { color: var(--text-secondary-light); } .dark-theme .toggle-btn { color: var(--text-secondary-dark); }
+        .toggle-btn.active { font-weight: 700; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); }
+        .leaderboard-list { list-style: none; }
+        .leaderboard-item { display: flex; align-items: center; padding: 10px; margin-bottom: 8px; border-radius: 8px; }
+        .light-theme .leaderboard-item { background-color: var(--surface-light); } .dark-theme .leaderboard-item { background-color: var(--surface-dark); }
+        .rank { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); width: 40px; }
+        .leaderboard-item img { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; object-fit: cover; }
+        .leaderboard-name { font-weight: 600; flex-grow: 1; } .leaderboard-score { font-weight: 600; color: var(--primary-color); }
+        
+        /* أنماط جديدة لنظام السحب */
+        .withdrawal-section { margin-top: 20px; }
+        .withdrawal-card { padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+        .light-theme .withdrawal-card { background-color: var(--surface-light); border: 1px solid var(--border-light); }
+        .dark-theme .withdrawal-card { background-color: var(--surface-dark); border: 1px solid var(--border-dark); }
+        .withdrawal-card h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 8px; font-family: var(--font-family); }
+        .light-theme .form-group input, .light-theme .form-group select { background-color: var(--background-light); border: 1px solid var(--border-light); color: var(--text-primary-light); }
+        .dark-theme .form-group input, .dark-theme .form-group select { background-color: var(--background-dark); border: 1px solid var(--border-dark); color: var(--text-primary-dark); }
+        .ad-type-options { display: flex; gap: 10px; margin-bottom: 15px; }
+        .ad-type-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .light-theme .ad-type-btn { background-color: var(--background-light); border-color: var(--border-light); color: var(--text-primary-light); }
+        .dark-theme .ad-type-btn { background-color: var(--background-dark); border-color: var(--border-dark); color: var(--text-primary-dark); }
+        .ad-type-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .ad-details { display: none; margin-top: 15px; }
+        .ad-details.active { display: block; }
+        .info-text { font-size: 0.85rem; margin-top: 5px; }
+        .light-theme .info-text { color: var(--text-secondary-light); }
+        .dark-theme .info-text { color: var(--text-secondary-dark); }
+        .withdrawal-info { padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .light-theme .withdrawal-info { background-color: rgba(231, 76, 60, 0.1); border: 1px solid rgba(231, 76, 60, 0.2); }
+        .dark-theme .withdrawal-info { background-color: rgba(231, 76, 60, 0.2); border: 1px solid rgba(231, 76, 60, 0.3); }
+        .withdrawal-info p { margin: 0; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div id="app-loader"><div class="spinner"></div><p id="loading-progress">0%</p></div>
+    <div id="popup" class="popup-overlay"><div class="popup-content"><div id="popup-body"></div></div></div>
+    <div id="app" style="display: none;">
+        <header class="profile-header">
+            <img id="user-photo" src="https://via.placeholder.com/80" alt="User">
+            <h1 id="user-name">Loading...</h1>
+            <div id="user-balance-container">Main Balance: <span id="user-balance">0.00</span> LIMONACH</div>
+        </header>
+        <main id="main-content">
+            <div id="home-page" class="page active">
+                <div class="stats-grid">
+                    <div class="stat-card"><h3>Today's Ads</h3><p id="daily-ads-watched">0 / 0</p></div>
+                    <div class="stat-card"><h3>Total Referrals</h3><p id="referral-count">0</p></div>
+                    <div class="stat-card"><h3>Total Ads Watched</h3><p id="total-ads-watched">0</p></div>
+                    <div class="stat-card"><h3>Total Income</h3><p id="total-earned">0.00</p></div>
+                </div>
+                <div id="earnings-graph-container" class="chart-container">
+                    <h3>Last 7 Days Earnings</h3>
+                    <div id="earnings-chart" class="chart"></div><div id="earnings-chart-labels" class="chart-labels"></div>
+                </div>
+                <div id="dynamic-links-container" style="margin-top: 20px;"></div>
+            </div>
+            <div id="tasks-page" class="page">
+                <div class="earning-wallet-card">
+                    <h3>Earning Wallet</h3>
+                    <p style="font-size: 1.8rem; font-weight: 700; color: var(--primary-color); margin: 10px 0;"><span id="earning-wallet-balance">0.00</span> LIMONACH</p>
+                    <small>Minimum 100 LIMONACH to move to main balance.</small>
+                    <button id="move-to-balance-btn" class="action-btn" style="width:100%; margin-top: 15px;" disabled>Move to Main Balance</button>
+                </div>
+                <div id="ad-progress-container" class="progress-container" style="margin-top:20px;"></div>
+                <div id="ad-task-container"></div>
+                <h2>Bonus Tasks</h2><div id="dynamic-tasks-container"></div>
+            </div>
+            <div id="leaderboard-page" class="page">
+                <h2>Leaderboard</h2>
+                <div class="leaderboard-toggle">
+                    <button class="toggle-btn active" data-board="referral">Top Referrers</button>
+                    <button class="toggle-btn" data-board="earning">Top Earners</button>
+                </div>
+                <div id="referral-board"><ul class="leaderboard-list" id="referral-leaderboard-list"></ul></div>
+                <div id="earning-board" style="display: none;"><ul class="leaderboard-list" id="earning-leaderboard-list"></ul></div>
+            </div>
+            <div id="profile-page" class="page">
+                <div id="referral-section"></div>
+                <div class="withdrawal-section">
+                    <h2>Withdrawal Request</h2>
+                    <div class="withdrawal-card">
+                        <h3>Submit Your Ad</h3>
+                        <form id="withdrawal-form">
+                            <div class="form-group">
+                                <label for="ad-name">Ad Name</label>
+                                <input type="text" id="ad-name" placeholder="Enter your ad name" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Ad Type</label>
+                                <div class="ad-type-options">
+                                    <div class="ad-type-btn active" data-type="bot">BOT</div>
+                                    <div class="ad-type-btn" data-type="channel">CHANNEL/GROUP</div>
+                                </div>
+                            </div>
+                            
+                            <div id="bot-details" class="ad-details active">
+                                <div class="form-group">
+                                    <label for="bot-username">Bot Username or Link</label>
+                                    <input type="text" id="bot-username" placeholder="@username or https://t.me/username">
+                                </div>
+                            </div>
+                            
+                            <div id="channel-details" class="ad-details">
+                                <div class="form-group">
+                                    <label for="channel-id">Channel/Group ID</label>
+                                    <input type="text" id="channel-id" placeholder="Get ID from @userinfobot">
+                                    <p class="info-text">You must add @EARN_MONEY_LIMONACH_BOT as admin to your channel/group</p>
+                                </div>
+                            </div>
+                            
+                            <div class="withdrawal-info">
+                                <p><strong>Important:</strong> Your withdrawal request will be reviewed by our team. You will be notified once it's approved or if any changes are required.</p>
+                            </div>
+                            
+                            <button type="submit" class="action-btn" style="width:100%; margin-top: 15px;">Submit Withdrawal Request</button>
+                        </form>
+                    </div>
+                </div>
+                <div id="withdrawal-history-section" style="margin-top: 20px;">
+                    <h2>Withdrawal History</h2>
+                    <div id="withdrawal-history-list"></div>
+                </div>
+            </div>
+        </main>
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-page="home-page"><i class="fas fa-home"></i><span>Home</span></button>
+            <button class="nav-btn" data-page="tasks-page"><i class="fas fa-tasks"></i><span>Tasks</span></button>
+            <button class="nav-btn" data-page="leaderboard-page"><i class="fas fa-trophy"></i><span>Leaderboard</span></button>
+            <button class="nav-btn" data-page="profile-page"><i class="fas fa-user-alt"></i><span>Profile</span></button>
+        </nav>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tg = window.Telegram.WebApp;
+        const firebaseConfig = {
+            apiKey: "AIzaSyCX7uxoXtRiC7F3kYzpoZOiC2FaKsFdrtI",
+            authDomain: "my-bot-ads-1.firebaseapp.com",
+            databaseURL: "https://my-bot-ads-1-default-rtdb.firebaseio.com",
+            projectId: "my-bot-ads-1",
+            storageBucket: "my-bot-ads-1.firebasestorage.app",
+            messagingSenderId: "484090238589",
+            appId: "1:484090238589:web:aad993f9631bb10f338314"
+        };
+
+        // 🟢 نظام الإحالات والإضافة التلقائية للمستخدمين
+        const urlParams = new URLSearchParams(window.location.search);
+        const referrerId = urlParams.get("ref"); // رقم الشخص الذي دعا المستخدم
+
+        async function saveReferral(db, tgUser, referrerId) {
+            const userRef = db.ref("users/" + tgUser.id);
+            const snapshot = await userRef.once("value");
+
+            // المستخدم جديد فقط
+            if (!snapshot.exists()) {
+                const newUser = {
+                    id: tgUser.id,
+                    firstName: tgUser.first_name || "",
+                    username: tgUser.username || "",
+                    balance: 0,
+                    totalEarned: 0,
+                    dailyAdCount: 0,
+                    lifetimeAdCount: 0,
+                    referrals: 0,
+                    photoUrl: tgUser.photo_url || "",
+                    welcomed: false,
+                    referredBy: referrerId || null
+                };
+
+                await userRef.set(newUser);
+
+                // إذا الرابط يحتوي على ref، زد إحالات ورصيد صاحب الدعوة
+                if (referrerId) {
+                    const refUserRef = db.ref("users/" + referrerId);
+
+                    refUserRef.once("value").then((refSnap) => {
+                        if (refSnap.exists()) {
+                            const refData = refSnap.val();
+                            const newReferrals = (refData.referrals || 0) + 1;
+                            const newBalance = (refData.balance || 0) + 5;
+                            const newTotalEarned = (refData.totalEarned || 0) + 5;
+
+                            refUserRef.update({
+                                referrals: newReferrals,
+                                balance: newBalance,
+                                totalEarned: newTotalEarned
+                            });
+                        }
+                    });
+                }
+            }
+        }
+        
+        let appConfig = {}; let userState = {}; let tgUser = {}; let earningWalletBalance = 0;
+        let leaderboardData = { referral: [], earning: [] };
+        let userTransactions = [];
+
+        const popup = document.getElementById('popup');
+        const popupBody = document.getElementById('popup-body');
+        const loadingProgress = document.getElementById('loading-progress');
+
+        const showPopup = (content) => { popupBody.innerHTML = content; popup.style.display = 'flex'; };
+        const closePopup = () => { popup.style.display = 'none'; };
+        const updateProgress = (percentage) => { loadingProgress.textContent = `${percentage}%`; };
+
+        const loadAdSdk = (zoneId) => {
+            if (!zoneId) { console.error("Ad Zone ID is missing from Firebase config!"); return; }
+            if (document.querySelector(`script[data-zone='${zoneId}']`)) return;
+            const script = document.createElement('script');
+            script.src = `//libtl.com/sdk.js`;
+            script.setAttribute('data-zone', zoneId);
+            script.setAttribute('data-sdk', `show_${zoneId}`);
+            script.async = true;
+            document.body.appendChild(script);
+        };
+
+        const initApp = async () => {
+            tg.ready(); tg.expand();
+            document.body.className = `${tg.colorScheme}-theme`;
+            tgUser = tg.initDataUnsafe.user;
+            if (!tgUser || !tgUser.id) { tg.showAlert("User data not found.", () => tg.close()); return; }
+
+            try {
+                updateProgress(10); firebase.initializeApp(firebaseConfig); const db = firebase.database();
+                updateProgress(20);
+                
+                // 🟢 تسجيل المستخدم والتحقق من الدعوة
+                await saveReferral(db, tgUser, referrerId);
+                
+                const configSnapshot = await db.ref('config').once('value');
+                appConfig = configSnapshot.val() || {};
+                updateProgress(40);
+
+                await loadUserData(db);
+                updateProgress(70);
+                
+                await loadLeaderboardData(db);
+                updateProgress(90);
+                
+                await loadUserTransactions(db);
+                updateProgress(100);
+                
+                document.getElementById('app-loader').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                
+                setupNavigation();
+                setupEventListeners();
+                
+                // إعداد نظام السحب
+                setupWithdrawalSystem();
+                
+            } catch (error) {
+                console.error("Error initializing app:", error);
+                tg.showAlert("Failed to load app. Please try again.", () => window.location.reload());
+            }
+        };
+
+        // دالة بديلة مؤقتة للدوال المفقودة
+        function loadUserData(db) {
+            return new Promise((resolve) => {
+                // هذا مجرد مثال، يجب استبداله بالكود الحقيقي
+                setTimeout(() => {
+                    document.getElementById('user-name').textContent = tgUser.first_name || "User";
+                    document.getElementById('user-photo').src = tgUser.photo_url || "https://via.placeholder.com/80";
+                    resolve();
+                }, 500);
+            });
+        }
+        
+        function loadLeaderboardData(db) {
+            return new Promise((resolve) => {
+                // هذا مجرد مثال، يجب استبداله بالكود الحقيقي
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            });
+        }
+        
+        function loadUserTransactions(db) {
+            return new Promise((resolve) => {
+                // هذا مجرد مثال، يجب استبداله بالكود الحقيقي
+                setTimeout(() => {
+                    resolve();
+                }, 500);
+            });
+        }
+        
+        function setupNavigation() {
+            const navButtons = document.querySelectorAll('.nav-btn');
+            navButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetPage = btn.getAttribute('data-page');
+                    
+                    // تحديث الأزرار النشطة
+                    navButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // إظهار الصفحة المطلوبة
+                    document.querySelectorAll('.page').forEach(page => {
+                        page.classList.remove('active');
+                    });
+                    document.getElementById(targetPage).classList.add('active');
+                });
+            });
+        }
+        
+        function setupEventListeners() {
+            // إضافة مستمعين للأحداث هنا
+            document.getElementById('move-to-balance-btn').addEventListener('click', () => {
+                showPopup('<h2>Move to Main Balance</h2><p>This feature is not yet available.</p><button class="popup-close-btn" onclick="closePopup()">OK</button>');
+            });
+            
+            // إضافة مستمعين لأزرار التبديل في لوحة المتصدرين
+            const toggleButtons = document.querySelectorAll('.toggle-btn');
+            toggleButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const boardType = btn.getAttribute('data-board');
+                    
+                    toggleButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    document.getElementById('referral-board').style.display = boardType === 'referral' ? 'block' : 'none';
+                    document.getElementById('earning-board').style.display = boardType === 'earning' ? 'block' : 'none';
+                });
+            });
+        }
+        
+        // إعداد نظام السحب
+        function setupWithdrawalSystem() {
+            // تبديل نوع الإعلان
+            const adTypeButtons = document.querySelectorAll('.ad-type-btn');
+            adTypeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    adTypeButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const adType = btn.getAttribute('data-type');
+                    document.getElementById('bot-details').classList.toggle('active', adType === 'bot');
+                    document.getElementById('channel-details').classList.toggle('active', adType === 'channel');
+                });
+            });
+            
+            // إرسال طلب السحب
+            document.getElementById('withdrawal-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const adName = document.getElementById('ad-name').value;
+                const adType = document.querySelector('.ad-type-btn.active').getAttribute('data-type');
+                
+                if (adType === 'bot') {
+                    const botUsername = document.getElementById('bot-username').value;
+                    if (!botUsername) {
+                        showPopup('<h2>Error</h2><p>Please enter bot username or link.</p><button class="popup-close-btn" onclick="closePopup()">OK</button>');
+                        return;
+                    }
+                    
+                    submitWithdrawalRequest(adName, adType, { username: botUsername });
+                } else if (adType === 'channel') {
+                    const channelId = document.getElementById('channel-id').value;
+                    if (!channelId) {
+                        showPopup('<h2>Error</h2><p>Please enter channel/group ID.</p><button class="popup-close-btn" onclick="closePopup()">OK</button>');
+                        return;
+                    }
+                    
+                    submitWithdrawalRequest(adName, adType, { channelId: channelId });
+                }
+            });
+        }
+        
+        // دالة إرسال طلب السحب
+        function submitWithdrawalRequest(adName, adType, details) {
+            const db = firebase.database();
+            const withdrawalRef = db.ref('withdrawalRequests').push();
+            
+            const withdrawalData = {
+                id: withdrawalRef.key,
+                userId: tgUser.id,
+                userName: tgUser.first_name || "Unknown",
+                userUsername: tgUser.username || "",
+                adName: adName,
+                adType: adType,
+                details: details,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+            
+            withdrawalRef.set(withdrawalData)
+                .then(() => {
+                    showPopup('<div class="popup-loader"><div class="spinner"></div><h2>Submitting Request</h2><p>Your withdrawal request is being submitted...</p></div>');
+                    
+                    setTimeout(() => {
+                        showPopup('<h2>Request Submitted</h2><p>Your withdrawal request has been submitted successfully. Our team will review it and notify you once it\'s approved.</p><button class="popup-close-btn" onclick="closePopup()">OK</button>');
+                        document.getElementById('withdrawal-form').reset();
+                    }, 2000);
+                })
+                .catch(error => {
+                    console.error("Error submitting withdrawal request:", error);
+                    showPopup('<h2>Error</h2><p>Failed to submit withdrawal request. Please try again.</p><button class="popup-close-btn" onclick="closePopup()">OK</button>');
+                });
+        }
+
+        initApp();
+    });
+    </script>
+</body>
+</html>
